@@ -1,2 +1,2 @@
-A simple wiiU snake game.
-Only tested on fw 5.5.1 but should work for previous version
+A simple wiiU snake game. \n
+Only tested on fw 5.5.x but should work for previous version
