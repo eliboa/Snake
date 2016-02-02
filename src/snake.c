@@ -1,13 +1,40 @@
 #include "snake.h"
-#define M 2147483647
+#define M 2147483647 
 #define A 16807
 #define Q ( M / A )
 #define R ( M % A )
 
+void displayStart(Snake* s) {
+
+    // Load ascii data
+    extern const struct {
+        unsigned char data[546];
+    } ascii;
+
+    // Draw the typo
+    int j, k = 0, row =0;
+    int start_x = 40;
+    int start_y = 70;
+    for (j = 0; j < 546; ++j)
+    {
+    	if(j % 39 == 0) k=0;
+
+    	if(ascii.data[j] == '\1') {
+    		int pos_x1 = start_x + (s->w * k);
+    		int pos_y1 = start_y + (s->w * row);
+    		drawFillRect(pos_x1, pos_y1, pos_x1 + s->w, pos_y1 + s->w, 0, 255, 54, 0);
+    	}
+    	k++;
+    	if(j % 39 == 0) row++;
+    }
+
+    drawString(0,17,"                         HOLD TO START");
+}
+
 void displaySnake(Snake* s) {
 
 	// First draw the frame
-	drawRect(1, 2, s->frame_x -1, s->frame_y -1, 255, 255, 255, 0);
+	drawRect(1, 2, s->frame_x -1, s->frame_y -1, 0, 255, 54, 0);
 
 	if(s->pause) drawString(0,15,"                                     PAUSE");
 
@@ -26,6 +53,10 @@ void displaySnake(Snake* s) {
 			buff = buff->next;
 		}
 	}
+
+	char title[120];
+	__os_snprintf(title, 120, "                                                    SCORE : %d", s->score);
+	drawString(0, 0, title);	
 	
 	if(s->loose) {
 
@@ -197,7 +228,7 @@ void moveSnake(Snake* s, char direction) {
 				si1->x = prev_x;
 				si1->y = prev_y;
 				// Color
-				si1->r = 255; si1->g = 255; si1->b = 255;
+				si1->r = 8; si1->g = 102; si1->b = 28;
 				// Parameters
 				si1->direction = head->direction;
 				si1->length = 1;
@@ -355,7 +386,7 @@ void initSnake(Snake* s) {
 	si->length = 1;
 	si->direction = s->direction;
 	// Color
-	si->r = 255; si->g = 0; si->b = 0;
+	si->r = 0; si->g = 255; si->b = 54;
 	si->next = NULL;
 	si->end = 0;
 	
@@ -376,7 +407,7 @@ void initSnake(Snake* s) {
 	si1->x = new_x;
 	si1->y = new_y;
 	// Color
-	si1->r = 255; si1->g = 255; si1->b = 255;
+	si1->r = 8; si1->g = 102; si1->b = 28;
 	// Parameters
 	si1->direction = s->direction;
 	si1->length = s->length - si->length;
