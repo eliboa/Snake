@@ -110,7 +110,9 @@ void _getIN()
 	s.food_state = 0;
 	s.food_x = 0;
 	s.food_y = 0;
-	s.lfsr = 0xACE1u;
+	s.seed = 1;
+	s.pause = 0;
+	s.debug = 0;
 
 	initSnake(&s);
 
@@ -138,6 +140,14 @@ void _getIN()
 				s.food_state = 0;
 				initSnake(&s);
 			}
+		}	
+		if (vpad_data.btn_trigger & BUTTON_B) {
+			if(s.pause) s.pause = 0;
+			else s.pause = 1;
+		}
+		if (vpad_data.btn_trigger & BUTTON_Y) {
+			if(s.debug) s.debug = 0;
+			else s.debug = 1;
 		}		
 		// Clear buffer
 		flipBuffers();
@@ -155,3 +165,5 @@ void _getIN()
 	}
 	_Exit();
 }
+
+
