@@ -1,6 +1,26 @@
+/*
+|	-OOOO-O----OOO---OO----OO---OO-OOOOOOO-
+|	OOOOO-OO---OO----OO----OO---OO-OOOOOOOO
+|	O-----OO---OO----OO----OO---OO-OO-----O
+|	O-----OOO--OO---OOOO---OO--OO--OO-----O
+|	O-----OOO--OO---O--O---OO-OOO--OO------
+|	OOO---OOOO-OO---O--O---OOOOO---OOOOO---
+|	-OOO--OO-O-OO--OO--OO--OOOO----OOOOO---
+|	--OOO-OO-OOOO--OO--OO--OOOOO---OOOOO---
+|	---OO-OO--OOO--OOOOOO--OO-OOO--OO------
+|	---OO-OO--OOO-OOOOOOOO-OO--OO--OO------
+|	---OO-OO---OO-OO----OO-OO---OO-OO-----O
+|	OOOO--OO---OO-OO----OO-OO---OO-OOOOOOOO
+|	OOO--OOO----O-OO----OO-OO---OO-OOOOOOO
+|	
+|	For Wii U
+|	v1.0
+|	eliboa@gmail.com
+|
+*/
+
 #include "loader.h"
 #include "snake.h"
-
 
 void _start()
 {
@@ -105,7 +125,7 @@ void _getIN()
 	s.length = 6;
 	s.direction = 'R';
 	s.score=0;
-
+	s.start=0;
 	s.first = NULL;
 	s.food_state = 0;
 	s.food_x = 0;
@@ -124,14 +144,14 @@ void _getIN()
 		//fillScreen(255,0,0,0);
 		fillScreen(0,0,0,0);
 
-		char title[120];
-		__os_snprintf(title, 120, "                                                    SCORE : %d", s.score);
-		drawString(0, 0, title);
+		if(s.start) {
+			triggerSnake(&s, &vpad_data);
+			displaySnake(&s);
+		} else {
+			displayStart(&s);
+		}
 
-
-		triggerSnake(&s, &vpad_data);
-		displaySnake(&s);
-
+		if(!s.start && (vpad_data.btn_hold || vpad_data.btn_trigger)) s.start=1;
 
 		if (vpad_data.btn_trigger & BUTTON_A) {
 			if(s.loose) {
@@ -141,14 +161,16 @@ void _getIN()
 				initSnake(&s);
 			}
 		}	
-		if (vpad_data.btn_trigger & BUTTON_B) {
+		if ((vpad_data.btn_trigger & BUTTON_B) && s.start) {
 			if(s.pause) s.pause = 0;
 			else s.pause = 1;
 		}
+		/*
 		if (vpad_data.btn_trigger & BUTTON_Y) {
 			if(s.debug) s.debug = 0;
 			else s.debug = 1;
 		}		
+		*/
 		// Clear buffer
 		flipBuffers();
 		// Exit when Home button is pressed
