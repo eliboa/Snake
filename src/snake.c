@@ -1,16 +1,41 @@
 #include "snake.h"
+#define M 2147483647
+#define A 16807
+#define Q ( M / A )
+#define R ( M % A )
 
 void displaySnake(Snake* s) {
 
 	// First draw the frame
-	drawRect(1, 2, s->frame_x -1, s->frame_y -1, 255, 0, 0, 0);
+	drawRect(1, 2, s->frame_x -1, s->frame_y -1, 255, 255, 255, 0);
+
+	if(s->pause) drawString(0,15,"                                     PAUSE");
+
+	// DEBUG MODE
+	if(s->debug) {
+
+		char logline[120]; int i;
+
+		__os_snprintf(logline, 120, "FOOD   - x = %d  y = %d  state = %d", s->food_x, s->food_y, s->food_state);
+		drawString(0,19,logline);
+		SnakeI *buff = s->first;
+		while( buff != NULL ) {
+			i++;
+			__os_snprintf(logline, 120, "PART %d - x = %d  y = %d  length = %d   direction = %c", i, buff->x, buff->y, buff->length, buff->direction);
+			drawString(0,i+19,logline);
+			buff = buff->next;
+		}
+	}
 	
 	if(s->loose) {
 
-		drawString(0,8,"                                >>> YOU LOOSE <<<\n                           PRESS A TO RESTART");
+		drawString(0,8,"                                >>> GAME OVER <<<\n                           PRESS A TO RESTART");
 
 	} else {
-	
+
+		// Get some food if not already
+		if(!s->food_state) setNewFoodCoord(s);
+
 		// Snake's head is the current part
 		SnakeI *current = s->first;
 
@@ -35,37 +60,24 @@ void displaySnake(Snake* s) {
 			current = current->next;
 		}
 
-		// Now we want some food for the snake to hunt
-		switch(s->food_state) {
-			
-			case 0: 
-			// Get some food
-				// Loop until some coordinates are found 
-				while(1) {
-					// Get some random coordinates 			
-					int rand_x = randU(s->frame_x, s);
-					int rand_y = randU(s->frame_y, s);	
-					// Check they aren't in the snake ones
-					if(!isOnSnake(s, 1, rand_x, rand_y)) {
-						s->food_x = rand_x;	
-						s->food_y = rand_y;
-						break;
-					}
-				}
-				// Switch food state
-				s->food_state = 1;
-				break;
-			case 1:
-				// Check if the food has been eaten
-				if(isOnSnake(s, 2, s->food_x, s->food_y)) {
-					stretchSnake(s, 1);
-					s->score = s->score + 100;
-					s->food_state = 0;
-				}
-				// Display the food
-				drawFillRect(s->food_x, s->food_y, s->food_x - s->w, s->food_y - s->w, 23, 10, 191, 0);
-				break;
-		}
+		// Now we want to display the food for the snake to hunt
+		if(s->food_state) drawFillCircle(s->food_x + (s->w /2), s->food_y + (s->w /2), s->w / 2, 23, 10, 191, 0);
+	}
+}
+
+void setNewFoodCoord(Snake* s) {
+	int rand_x, rand_y, i=100;
+	while(i--) {
+		// Get some food coordinates
+		rand_x = randU(s->frame_x, s);
+		rand_y = randU(s->frame_y, s);	
+		// Check they aren't in the snake ones
+		if(!isOnSnake(s, 1, rand_x, rand_y)) {
+			s->food_x = rand_x;	
+			s->food_y = rand_y;
+			s->food_state = 1;
+			break;
+		}	
 	}
 }
 
@@ -74,12 +86,11 @@ void moveSnake(Snake* s, char direction) {
 	// Memory allocation function
 	unsigned int coreinit_handle;
 	OSDynLoad_Acquire("coreinit.rpl", &coreinit_handle);	
-	void* (*OSAllocFromSystem)(uint32_t size, int align);
-	void*(*memset)(void *dest, uint32_t value, uint32_t bytes);
-	void (*OSFreeToSystem)(void *ptr);
-	OSDynLoad_FindExport(coreinit_handle, 0, "OSAllocFromSystem", &OSAllocFromSystem);		
-	OSDynLoad_FindExport(coreinit_handle, 0, "OSFreeToSystem", &OSFreeToSystem);
-	OSDynLoad_FindExport(coreinit_handle, 0, "memset", &memset);
+	uint32_t *memalign, *freemem;
+	OSDynLoad_FindExport(coreinit_handle, 1, "MEMAllocFromDefaultHeapEx", &memalign);
+	OSDynLoad_FindExport(coreinit_handle, 1, "MEMFreeToDefaultHeap", &freemem);
+	void* (*MEMAllocFromDefaultHeapEx)(uint32_t size, int align) = (void* (*)(uint32_t,int))*memalign;
+	void (*MEMFreeToDefaultHeap)(void *ptr) = (void (*)(void*))*freemem;
 
 	// Get the head
 	SnakeI *head = s->first;
@@ -88,27 +99,79 @@ void moveSnake(Snake* s, char direction) {
 	int prev_x = head->x;
 	int prev_y = head->y;
 
-	// Move the snake's head inside the frame
+	SnakeI *tail = head->next;
+	
+	// Check for forbidden moves
 
-	if(direction == 'U') { // Up
-		if     (head->y == 0 && head->x < (s->frame_x - s->w) ) { direction = 'R'; head->x = head->x + s->w; }
-		else if(head->y == 0 && head->x == (s->frame_x - s->w)) { direction = 'D'; head->y = head->y + s->w; } 
-		else if(head->y  > 0 && s->direction != 'D') head->y = head->y - s->w;
+	// About-turn forbidden
+	if((direction=='U' && tail->y == (head->y - s->w)) 
+	 ||(direction=='D' && tail->y == (head->y + s->w)) 
+	 ||(direction=='R' && tail->x == (head->x + s->w)) 
+	 ||(direction=='L' && tail->x == (head->x - s->w))) {
+		direction = tail->direction;
 	}
-	else if(direction == 'D') {// Down
-		if 	   (head->y == (s->frame_y - s->w) && head->x >= 0) { direction = 'L'; head->x = head->x - s->w; }
-		else if(head->y == (s->frame_y - s->w) && head->x == 0) { direction = 'U'; head->y = head->y - s->w; }
-		else if(head->y  < (s->frame_y - s->w) && s->direction != 'U') head->y = head->y + s->w;
+
+	// The head touches the left wall
+	if(head->x == 0) {
+		// Top left : Up and Left forbidden
+		if(head->y == 0 && (direction == 'U' || direction == 'L')) {
+			// Get a new direction
+			if(tail->direction == 'U') direction = 'R'; else direction = 'D';
+		}
+		// Bottom left : Down and Left forbidden
+		else if(head->y == (s->frame_y - s->w) && (direction == 'D' || direction == 'L')) {
+			// Get a new direction
+			if(tail->direction == 'D') direction = 'R'; else direction = 'U';	
+		}
+		// Left forbidden
+		else if(direction == 'L') {
+			// Get a new direction
+			if(tail->direction == 'D') direction = 'D'; else direction = 'U';
+		}
 	}
-	else if(direction == 'L') {// Left
-		if     (head->x == 0 && head->y > 0) { direction = 'U'; head->y = head->y - s->w; }
-		else if(head->x == 0 && head->y == 0) { direction = 'R'; head->y = head->y - s->w; }
-		else if(head->x  > 0 && s->direction != 'R') head->x = head->x - s->w;		
+	// The head touches the right wall
+	else if(head->x == (s->frame_x - s->w)) {
+		// Top right: Up and Right forbidden
+		if(head->y == 0 && (direction == 'U' || direction == 'R')) {
+			// Get a new direction
+			if(tail->direction == 'U') direction = 'L'; else direction = 'D';
+		}
+		// Bottom right : Down and Right forbidden
+		else if(head->y == (s->frame_y - s->w) && (direction == 'D' || direction == 'R')) {
+			// Get a new direction
+			if(tail->direction == 'D') direction = 'L'; else direction = 'U';
+		}
+		// Right forbidden
+		else if(direction == 'R') {
+			// Get a new direction
+			if(tail->direction == 'U') direction = 'U'; else  direction = 'D';
+		}	
+	}
+	// The head touches the top wall : Up forbidden
+	else if(head->y == 0 && direction == 'U') {
+		if(tail->direction == 'L') direction = 'L';
+		else direction = 'R';
+	}
+	// The head touches the bottom wall : Down forbidden
+	else if(head->y == (s->frame_y - s->w) && direction == 'D') {
+		if(tail->direction == 'R') direction = 'R';
+		else direction = 'L';
 	}	
-	else if(direction == 'R') {// Right
-		if 		(head->x == (s->frame_x - s->w) &&  head->y < (s->frame_y - s->w)) { direction = 'D'; head->y = head->y + s->w; }	
-		else if (head->x == (s->frame_x - s->w) &&  head->y == (s->frame_y - s->w)) { direction = 'L'; head->x = head->x - s->w;	 }
-		else if (head->x  < (s->frame_x - s->w) && s->direction != 'L') head->x = head->x + s->w;
+
+	// Move the snake's head
+	switch(direction) {
+		case 'U': 
+			head->y = head->y - s->w;
+			break;
+		case 'D':
+			head->y = head->y + s->w;
+			break;
+		case 'L':
+			head->x = head->x - s->w;	
+			break;
+		case 'R':
+			head->x = head->x + s->w;
+			break;
 	}
 
 	// If the snake's head position has changed
@@ -129,7 +192,7 @@ void moveSnake(Snake* s, char direction) {
 				// Set a new part just behind the head
 				//
 				// Allocate memory and set coordinates
-				SnakeI *si1 = OSAllocFromSystem(0x40, 64);
+				SnakeI *si1 = MEMAllocFromDefaultHeapEx(0x40, 0x20);
 				// Coordinates
 				si1->x = prev_x;
 				si1->y = prev_y;
@@ -174,7 +237,7 @@ void moveSnake(Snake* s, char direction) {
 				// If the last part is too smal to be reduced
 				if(current->length == 1) {
 					// Then we have to delete it
-					OSFreeToSystem(current);
+					MEMFreeToDefaultHeap(current);
 					// And set the before last part as the last one
 					before_last->next = NULL;
 					before_last->end = 1;
@@ -187,6 +250,17 @@ void moveSnake(Snake* s, char direction) {
 		}
 		// Save the direction
 		s->direction = direction;	
+
+		// Check if the food has been eaten
+		if(isOnSnake(s, 2, s->food_x, s->food_y)) {
+			// Then stretch the snake (+1)
+			stretchSnake(s, 1);
+			// Increment the score
+			s->score = s->score + 100;
+			// Switch food taste
+			s->food_state = 0;
+		}
+
 		// Check to see if it's a loose move
 		if(isOnSnake(s, 0, head->x, head->y)) s->loose = 1;
 	}
@@ -203,7 +277,7 @@ int isOnSnake(Snake* s, int head, int x, int y) {
 
 	// If we want to test the head
 	if(head>0) {
-		if(current->x == x - s->w && current->y == y - s->w) return 1;
+		if(current->x == x && current->y == y) return 1;
 		else if(head==2) return 0;
 	}
 
@@ -226,31 +300,37 @@ int isOnSnake(Snake* s, int head, int x, int y) {
 
 void triggerSnake(Snake* s, VPADData* vpad) {
 
-	moveSnake(s, s->direction);
+	if(!s->pause)
+	{
+		if (vpad->btn_hold & BUTTON_UP) moveSnake(s, 'U');
+		if (vpad->btn_hold & BUTTON_DOWN) moveSnake(s, 'D');
+		if (vpad->btn_hold & BUTTON_LEFT) moveSnake(s, 'L');
+		if (vpad->btn_hold & BUTTON_RIGHT) moveSnake(s, 'R');
 
-	if (vpad->btn_hold & BUTTON_UP) moveSnake(s, 'U');
-	if (vpad->btn_hold & BUTTON_DOWN) moveSnake(s, 'D');
-	if (vpad->btn_hold & BUTTON_LEFT) moveSnake(s, 'L');
-	if (vpad->btn_hold & BUTTON_RIGHT) moveSnake(s, 'R');
+		float x = vpad->lstick.x;
+		float y = vpad->lstick.y;
+		float abs_x = x;
+		float abs_y = y;
 
-	float x = vpad->lstick.x;
-	float y = vpad->lstick.y;
-	float abs_x = x;
-	float abs_y = y;
+		// Calculate absolute values
+		if(x < 0) abs_x = -(x);
+		if(y < 0) abs_y = -(y);
 
-	// Calculate absolute values
-	if(x < 0) abs_x = -(x);
-	if(y < 0) abs_y = -(y);
+	    if( abs_x > 0 || abs_y > 0)
+	  	{
+		    // Calculate direction from Left stick
+			// If abs(x) == abs(y), arbitrarily designate the direction on the abscissa
+			if( abs_x >= abs_y ) {
+				 if(x > 0)  moveSnake(s, 'R');
+				 if(x < 0)  moveSnake(s, 'L');
+			}
+			if( abs_y > abs_x) {
+				if(y > 0)  moveSnake(s, 'U');
+				if(y < 0)  moveSnake(s, 'D');
+			}
+		}
 
-    // Calculate direction from Left stick
-	// If abs(x) == abs(y), arbitrarily designate the direction on the abscissa
-	if( abs_x >= abs_y ) {
-		 if(x > 0)  moveSnake(s, 'R');
-		 if(x < 0)  moveSnake(s, 'L');
-	}
-	if( abs_y > abs_x) {
-		if(y > 0)  moveSnake(s, 'U');
-		if(y < 0)  moveSnake(s, 'D');
+		if(!s->debug) moveSnake(s, s->direction);
 	}
 }
 
@@ -260,17 +340,15 @@ void initSnake(Snake* s) {
 	// Memory allocation function
 	unsigned int coreinit_handle;
 	OSDynLoad_Acquire("coreinit.rpl", &coreinit_handle);	
-	void* (*OSAllocFromSystem)(uint32_t size, int align);
-	void*(*memset)(void *dest, uint32_t value, uint32_t bytes);
-	void (*OSFreeToSystem)(void *ptr);
-	OSDynLoad_FindExport(coreinit_handle, 0, "OSAllocFromSystem", &OSAllocFromSystem);		
-	OSDynLoad_FindExport(coreinit_handle, 0, "OSFreeToSystem", &OSFreeToSystem);
-	OSDynLoad_FindExport(coreinit_handle, 0, "memset", &memset);
+	uint32_t *memalign;
+	OSDynLoad_FindExport(coreinit_handle, 1, "MEMAllocFromDefaultHeapEx", &memalign);
+	void* (*MEMAllocFromDefaultHeapEx)(uint32_t size, int align) = (void* (*)(uint32_t,int))*memalign;
+
 
 	s->loose = 0;
 	
 	// Create the snake head
-	SnakeI *si = OSAllocFromSystem(0x40, 64);;
+	SnakeI *si = MEMAllocFromDefaultHeapEx(0x40, 0x20);
 	// Coordinates
 	si->x = s->x;
 	si->y = s->y;
@@ -293,7 +371,7 @@ void initSnake(Snake* s) {
 	if(s->direction == 'U') { new_x = s->x; 		new_y = s->y + s->w; };
 
 	// Allocate memory and set coordinates
-	SnakeI *si1 = OSAllocFromSystem(0x40, 64);
+	SnakeI *si1 = MEMAllocFromDefaultHeapEx(0x40, 0x20);
 	// Coordinates
 	si1->x = new_x;
 	si1->y = new_y;
@@ -306,6 +384,9 @@ void initSnake(Snake* s) {
 	si1->end = 1;
 
 	si->next = si1;
+
+	// Now get the first food
+	setNewFoodCoord(s);
 }
 
 
@@ -317,17 +398,10 @@ void stretchSnake(Snake* s, int length) {
 	current->length = current->length + length;
 }
 
-
-unsigned randU(int range_max, Snake* s)
+int randU(int range_max, Snake* s)
 {
-    while(1) {
-        s->bit  = ((s->lfsr >> 0) ^ (s->lfsr >> 2) ^ (s->lfsr >> 3) ^ (s->lfsr >> 5) ) & 1;
-        s->lfsr =  (s->lfsr >> 1) | (s->bit << 15);
-        if(s->lfsr < range_max) {
-        	int a = (s->lfsr / s->w);
-        	s->lfsr = a * s->w;
-        	break;
-        }
-    }
-    return s->lfsr;
+    s->seed = A * (s->seed % Q) - R * (s->seed / Q);
+    if (s->seed <= 0) s->seed += M;
+    s->seed = s->seed % (range_max-1) + 1;
+    return (s->seed / s->w) * s->w;
 }
