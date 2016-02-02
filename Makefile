@@ -8,7 +8,7 @@ build	:=	 $(root)/bin
 libs := $(DEVKITPRO)/libwiiu/bin
 www :=$(root)/../../wamp/www/wiiU
 framework:=$(root)/../../framework
-all: setup main550
+all: setup main550 main532 main500 main410 main400 main310 main300 main210 main200
 setup:
 	mkdir -p $(root)/bin/
 main550:
@@ -22,7 +22,7 @@ main540:
 	#-Wa,-a,-ad
 	cp -r $(root)/*.o $(build)
 	rm $(root)/*.o
-	$(LD) $(LDFLAGS) -o $(build)/code540.bin $(build)/loader.o $(libs)/550/*.o `find $(build) -name "*.o" ! -name "loader.o"`
+	$(LD) $(LDFLAGS) -o $(build)/code540.bin $(build)/loader.o $(libs)/540/*.o `find $(build) -name "*.o" ! -name "loader.o"`
 main532:
 	$(CC) $(CFLAGS) -DVER=532 $(project)/*.c
 	#-Wa,-a,-ad
