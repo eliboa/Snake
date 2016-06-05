@@ -141,6 +141,8 @@ int Menu_Main()
 		flipBuffers();
 		// Exit when Home button is pressed
 		if(vpad_data.btns_h & VPAD_BUTTON_HOME) break;
+        
+        msleep(100);
 	}
 
 	// WARNING: DO NOT CHANGE THIS. YOU MUST CLEAR THE FRAMEBUFFERS AND 

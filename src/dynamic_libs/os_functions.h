@@ -37,6 +37,7 @@ extern "C" {
 #define MICROSECS_TO_TICKS(usec)        (SECS_TO_TICKS(usec) / 1000000)
 
 #define usleep(usecs)                   OSSleepTicks(MICROSECS_TO_TICKS(usecs))
+#define msleep(msecs)                   OSSleepTicks(MILLISECS_TO_TICKS(msecs))
 #define sleep(secs)                     OSSleepTicks(SECS_TO_TICKS(secs))
 
 #define FLUSH_DATA_BLOCK(addr)          asm volatile("dcbf 0, %0; sync" : : "r"(((addr) & ~31)))

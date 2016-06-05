@@ -61,7 +61,7 @@ void displaySnake(Snake* s) {
 	
 	if(s->loose) {
 
-		drawString(0,8,"                                >>> GAME OVER <<<\n                           PRESS A TO RESTART");
+		drawString(0,8,"                           >>> GAME OVER <<<\n                           PRESS A TO RESTART");
 
 	} else {
 
