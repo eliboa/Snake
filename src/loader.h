@@ -1,11 +1,10 @@
 #ifndef LOADER_H
 #define LOADER_H
-#include "../../../../../../../devkitPro/libwiiu/src/coreinit.h"
-#include "../../../../../../../devkitPro/libwiiu/src/vpad.h"
-#include "../../../../../../../devkitPro/libwiiu/src/draw.h"
-#include "../../../../../../../devkitPro/libwiiu/src/string.h"
+#include "dynamic_libs/os_functions.h"
+#include "dynamic_libs/vpad_functions.h"
+#include "draw.h"
 
 void printU(int line, char messageU[]);
-void _getIN();
+int _getIN();
 
 #endif /* LOADER_H */

@@ -1,8 +1,8 @@
 #ifndef SNAKE_H
 #define SNAKE_H
-#include "../../../../../../../devkitPro/libwiiu/src/coreinit.h"
-#include "../../../../../../../devkitPro/libwiiu/src/vpad.h"
-#include "../../../../../../../devkitPro/libwiiu/src/draw.h"
+#include "dynamic_libs/os_functions.h"
+#include "draw.h"
+#include "dynamic_libs/vpad_functions.h"
 
 typedef struct SnakeI SnakeI;
 struct SnakeI {

@@ -115,13 +115,6 @@ void setNewFoodCoord(Snake* s) {
 void moveSnake(Snake* s, char direction) {
 
 	// Memory allocation function
-	unsigned int coreinit_handle;
-	OSDynLoad_Acquire("coreinit.rpl", &coreinit_handle);	
-	uint32_t *memalign, *freemem;
-	OSDynLoad_FindExport(coreinit_handle, 1, "MEMAllocFromDefaultHeapEx", &memalign);
-	OSDynLoad_FindExport(coreinit_handle, 1, "MEMFreeToDefaultHeap", &freemem);
-	void* (*MEMAllocFromDefaultHeapEx)(uint32_t size, int align) = (void* (*)(uint32_t,int))*memalign;
-	void (*MEMFreeToDefaultHeap)(void *ptr) = (void (*)(void*))*freemem;
 
 	// Get the head
 	SnakeI *head = s->first;
@@ -223,7 +216,7 @@ void moveSnake(Snake* s, char direction) {
 				// Set a new part just behind the head
 				//
 				// Allocate memory and set coordinates
-				SnakeI *si1 = MEMAllocFromDefaultHeapEx(0x40, 0x20);
+				SnakeI *si1 = pMEMAllocFromDefaultHeapEx(0x40, 0x20);
 				// Coordinates
 				si1->x = prev_x;
 				si1->y = prev_y;
@@ -268,7 +261,7 @@ void moveSnake(Snake* s, char direction) {
 				// If the last part is too smal to be reduced
 				if(current->length == 1) {
 					// Then we have to delete it
-					MEMFreeToDefaultHeap(current);
+					pMEMFreeToDefaultHeap(current);
 					// And set the before last part as the last one
 					before_last->next = NULL;
 					before_last->end = 1;
@@ -333,10 +326,10 @@ void triggerSnake(Snake* s, VPADData* vpad) {
 
 	if(!s->pause)
 	{
-		if (vpad->btn_hold & BUTTON_UP) moveSnake(s, 'U');
-		if (vpad->btn_hold & BUTTON_DOWN) moveSnake(s, 'D');
-		if (vpad->btn_hold & BUTTON_LEFT) moveSnake(s, 'L');
-		if (vpad->btn_hold & BUTTON_RIGHT) moveSnake(s, 'R');
+		if (vpad->btns_h & VPAD_BUTTON_UP) moveSnake(s, 'U');
+		if (vpad->btns_h & VPAD_BUTTON_DOWN) moveSnake(s, 'D');
+		if (vpad->btns_h & VPAD_BUTTON_LEFT) moveSnake(s, 'L');
+		if (vpad->btns_h & VPAD_BUTTON_RIGHT) moveSnake(s, 'R');
 
 		float x = vpad->lstick.x;
 		float y = vpad->lstick.y;
@@ -369,17 +362,12 @@ void triggerSnake(Snake* s, VPADData* vpad) {
 void initSnake(Snake* s) {
 
 	// Memory allocation function
-	unsigned int coreinit_handle;
-	OSDynLoad_Acquire("coreinit.rpl", &coreinit_handle);	
-	uint32_t *memalign;
-	OSDynLoad_FindExport(coreinit_handle, 1, "MEMAllocFromDefaultHeapEx", &memalign);
-	void* (*MEMAllocFromDefaultHeapEx)(uint32_t size, int align) = (void* (*)(uint32_t,int))*memalign;
 
 
 	s->loose = 0;
 	
 	// Create the snake head
-	SnakeI *si = MEMAllocFromDefaultHeapEx(0x40, 0x20);
+	SnakeI *si = pMEMAllocFromDefaultHeapEx(0x40, 0x20);
 	// Coordinates
 	si->x = s->x;
 	si->y = s->y;
@@ -402,7 +390,7 @@ void initSnake(Snake* s) {
 	if(s->direction == 'U') { new_x = s->x; 		new_y = s->y + s->w; };
 
 	// Allocate memory and set coordinates
-	SnakeI *si1 = MEMAllocFromDefaultHeapEx(0x40, 0x20);
+	SnakeI *si1 = pMEMAllocFromDefaultHeapEx(0x40, 0x20);
 	// Coordinates
 	si1->x = new_x;
 	si1->y = new_y;
