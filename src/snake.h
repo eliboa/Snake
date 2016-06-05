@@ -47,6 +47,7 @@ void initSnake(Snake* s);
 void displayStart(Snake* s);
 void displaySnake(Snake* s);
 void moveSnake(Snake* s, char direction);
+int isOnSnake(Snake* s, int head, int x, int y);
 int isLooseMoove(Snake* s);
 void setNewFoodCoord(Snake* s);
 void triggerSnake(Snake* s, VPADData* vpad);

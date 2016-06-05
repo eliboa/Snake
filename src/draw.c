@@ -31,14 +31,14 @@ void fillScreen(char r,char g,char b,char a)
 void drawPixel(int x, int y, char r, char g, char b, char a)
 {
 	uint32_t num = (r << 24) | (g << 16) | (b << 8) | a;
-	OSScreenPutPixelEx(0,x*2,y*2,num);
-	OSScreenPutPixelEx(1,x*2,y*2,num);
-	OSScreenPutPixelEx(0,x*2+1,y*2,num);
-	OSScreenPutPixelEx(1,x*2+1,y*2,num);
-	OSScreenPutPixelEx(0,x*2,y*2+1,num);
-	OSScreenPutPixelEx(1,x*2,y*2+1,num);
-	OSScreenPutPixelEx(0,x*2+1,y*2+1,num);
-	OSScreenPutPixelEx(1,x*2+1,y*2+1,num);
+	OSScreenPutPixelEx(0,x,y,num);
+	OSScreenPutPixelEx(1,x,y,num);
+//	OSScreenPutPixelEx(0,x*2+1,y*2,num);
+//	OSScreenPutPixelEx(1,x*2+1,y*2,num);
+//	OSScreenPutPixelEx(0,x*2,y*2+1,num);
+//	OSScreenPutPixelEx(1,x*2,y*2+1,num);
+//	OSScreenPutPixelEx(0,x*2+1,y*2+1,num);
+//	OSScreenPutPixelEx(1,x*2+1,y*2+1,num);
 	//Code to write to framebuffer directly. For some reason this is only writing to one of the framebuffers when calling flipBuffers. Should provide speedup but needs investigation.
 	/*
 	unsigned int coreinit_handle;

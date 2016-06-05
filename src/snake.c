@@ -1,4 +1,5 @@
 #include "snake.h"
+#include "system/memory.h"
 #define M 2147483647 
 #define A 16807
 #define Q ( M / A )
@@ -41,7 +42,7 @@ void displaySnake(Snake* s) {
 	// DEBUG MODE
 	if(s->debug) {
 
-		char logline[120]; int i;
+		char logline[120]; int i=0;
 
 		__os_snprintf(logline, 120, "FOOD   - x = %d  y = %d  state = %d", s->food_x, s->food_y, s->food_state);
 		drawString(0,19,logline);
@@ -216,7 +217,7 @@ void moveSnake(Snake* s, char direction) {
 				// Set a new part just behind the head
 				//
 				// Allocate memory and set coordinates
-				SnakeI *si1 = pMEMAllocFromDefaultHeapEx(0x40, 0x20);
+				SnakeI *si1 = MEMBucket_alloc(0x40, 0x20);
 				// Coordinates
 				si1->x = prev_x;
 				si1->y = prev_y;
@@ -261,7 +262,7 @@ void moveSnake(Snake* s, char direction) {
 				// If the last part is too smal to be reduced
 				if(current->length == 1) {
 					// Then we have to delete it
-					pMEMFreeToDefaultHeap(current);
+					MEMBucket_free(current);
 					// And set the before last part as the last one
 					before_last->next = NULL;
 					before_last->end = 1;
@@ -320,6 +321,7 @@ int isOnSnake(Snake* s, int head, int x, int y) {
 		}
 		current = current->next; 
 	}
+    return 0;
 }
 
 void triggerSnake(Snake* s, VPADData* vpad) {
@@ -367,7 +369,7 @@ void initSnake(Snake* s) {
 	s->loose = 0;
 	
 	// Create the snake head
-	SnakeI *si = pMEMAllocFromDefaultHeapEx(0x40, 0x20);
+	SnakeI *si = MEMBucket_alloc(0x40, 0x20);
 	// Coordinates
 	si->x = s->x;
 	si->y = s->y;
@@ -383,14 +385,14 @@ void initSnake(Snake* s) {
 
 	// Create the tail
 	// Calculate new part coordinates		
-	int i, new_x, new_y;
+	int new_x=0; int new_y=0;
 	if(s->direction == 'L') { new_x = s->x + s->w; 	new_y = s->y; };
 	if(s->direction == 'R') { new_x = s->x - s->w; 	new_y = s->y; };		
 	if(s->direction == 'D') { new_x = s->x; 		new_y = s->y - s->w; };
 	if(s->direction == 'U') { new_x = s->x; 		new_y = s->y + s->w; };
 
 	// Allocate memory and set coordinates
-	SnakeI *si1 = pMEMAllocFromDefaultHeapEx(0x40, 0x20);
+	SnakeI *si1 = MEMBucket_alloc(0x40, 0x20);
 	// Coordinates
 	si1->x = new_x;
 	si1->y = new_y;
