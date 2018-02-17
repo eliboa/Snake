@@ -1,8 +1,8 @@
 #ifndef SNAKE_H
 #define SNAKE_H
-#include "../../../../../../../devkitPro/libwiiu/src/coreinit.h"
-#include "../../../../../../../devkitPro/libwiiu/src/vpad.h"
-#include "../../../../../../../devkitPro/libwiiu/src/draw.h"
+#include "dynamic_libs/os_functions.h"
+#include "draw.h"
+#include "dynamic_libs/vpad_functions.h"
 
 typedef struct SnakeI SnakeI;
 struct SnakeI {
@@ -47,6 +47,7 @@ void initSnake(Snake* s);
 void displayStart(Snake* s);
 void displaySnake(Snake* s);
 void moveSnake(Snake* s, char direction);
+int isOnSnake(Snake* s, int head, int x, int y);
 int isLooseMoove(Snake* s);
 void setNewFoodCoord(Snake* s);
 void triggerSnake(Snake* s, VPADData* vpad);
